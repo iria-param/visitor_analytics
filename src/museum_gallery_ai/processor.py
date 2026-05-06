@@ -7,6 +7,7 @@ from .detector import create_detector
 from .metrics import MetricsEngine
 from .models import PipelineConfig, TrackEvent
 from .overlay import OverlayRenderer, OverlayVideoWriter
+from .track_diagnostics import TrackDiagnostics
 from .video import VideoSource
 from .writers import JsonlEventWriter, write_json
 from .zone_engine import ZoneEventEngine
@@ -27,12 +28,14 @@ class OfflineProcessor:
         last_timestamp = 0.0
         event_engine: ZoneEventEngine | None = None
         metrics: MetricsEngine | None = None
+        diagnostics: TrackDiagnostics | None = None
 
         try:
             video = VideoSource(self.source)
             detector = create_detector(self.config.detector)
             event_engine = ZoneEventEngine(self.config.zones, self.config.lines, self.config.processing)
             metrics = MetricsEngine(self.config.zones, self.config.lines, self.config.processing.congestion_threshold)
+            diagnostics = TrackDiagnostics(self.config.processing)
             renderer = OverlayRenderer(self.config.zones, self.config.lines)
             events_writer = JsonlEventWriter(self.output_dir / "events.jsonl")
 
@@ -46,6 +49,7 @@ class OfflineProcessor:
                     break
 
                 tracks = detector.track_people(frame.image)
+                diagnostics.observe(frame.timestamp_seconds, processed_frames, tracks)
                 events = event_engine.process(frame.timestamp_seconds, tracks)
                 self._record_events(events, metrics, events_writer)
 
@@ -79,6 +83,8 @@ class OfflineProcessor:
             "gallery_id": self.config.camera.gallery_id,
             "name": self.config.camera.name,
         }
+        if diagnostics is not None:
+            summary["track_diagnostics"] = diagnostics.summary(self.config.zones, self.config.lines)
         write_json(self.output_dir / "metrics_summary.json", summary)
         return summary
 

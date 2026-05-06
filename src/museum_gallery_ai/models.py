@@ -59,6 +59,10 @@ class ProcessingConfig:
     lost_track_grace_seconds: float = 5.0
     congestion_threshold: int = 5
     congestion_min_seconds: float = 10.0
+    short_lived_track_seconds: float = 1.0
+    id_switch_window_seconds: float = 2.0
+    id_switch_distance_pixels: float = 80.0
+    line_fragmentation_buffer_pixels: float = 30.0
 
 
 @dataclass(frozen=True)
