@@ -1,0 +1,111 @@
+{
+  "camera": {
+    "camera_id": "camera_1",
+    "gallery_id": "gallery_1",
+    "name": "Calibrated Camera"
+  },
+  "detector": {
+    "provider": "ultralytics",
+    "model_name": "yolo11n.pt",
+    "confidence_threshold": 0.18,
+    "image_size": 1280,
+    "tracker": "bytetrack.yaml",
+    "device": "cpu"
+  },
+  "processing": {
+    "max_frames": null,
+    "frame_stride": 1,
+    "dwell_confirm_seconds": 3.0,
+    "lost_track_grace_seconds": 5.0,
+    "congestion_threshold": 5,
+    "congestion_min_seconds": 10.0
+  },
+  "zones": [
+    {
+      "zone_id": "exhibit_1",
+      "zone_type": "exhibit",
+      "name": "Exhibit 1",
+      "points": [
+        [
+          578,
+          352
+        ],
+        [
+          755,
+          342
+        ],
+        [
+          725,
+          258
+        ],
+        [
+          622,
+          256
+        ],
+        [
+          449,
+          238
+        ],
+        [
+          368,
+          289
+        ],
+        [
+          366,
+          387
+        ]
+      ]
+    },
+    {
+      "zone_id": "exhibit_2",
+      "zone_type": "exhibit",
+      "name": "Exhibit 2",
+      "points": [
+        [
+          757,
+          432
+        ],
+        [
+          726,
+          349
+        ],
+        [
+          584,
+          360
+        ],
+        [
+          416,
+          402
+        ],
+        [
+          338,
+          446
+        ],
+        [
+          378,
+          523
+        ],
+        [
+          554,
+          507
+        ]
+      ]
+    }
+  ],
+  "lines": [
+    {
+      "line_id": "entry_line_1",
+      "line_type": "entry",
+      "name": "Entry Line 1",
+      "start": [
+        710,
+        228
+      ],
+      "end": [
+        597,
+        230
+      ],
+      "direction": "any"
+    }
+  ]
+}

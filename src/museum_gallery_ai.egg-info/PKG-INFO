@@ -1,0 +1,122 @@
+Metadata-Version: 2.4
+Name: museum-gallery-ai
+Version: 0.1.0
+Summary: Camera-aware museum/gallery visitor analytics pipeline.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.26
+Requires-Dist: opencv-python>=4.9
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: ultralytics>=8.3
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+
+# Museum Gallery AI
+
+Museum Gallery AI is a planned CCTV/camera-based visitor analytics system for
+museums and galleries. Phase 1 focuses on visitor analytics from camera feeds.
+Phase 2 adds camera-only speaker interaction with no microphone.
+
+The project is currently in the research and architecture stage. We are not
+jumping directly into implementation. The working rule is:
+
+```text
+Research first. Plan next. Discuss together. Build after agreement.
+```
+
+## Start Here
+
+- [Project Start Workflow](docs/PROJECT_START_WORKFLOW.md): mandatory workflow
+  for research, planning, discussion, and implementation.
+- [Foundation Research](docs/research/0001-room-ai-foundation-research.md):
+  first authentic-source research brief for Room AI.
+- [Museum CCTV Analytics Research](docs/research/0002-museum-cctv-visitor-analytics-existing-systems.md):
+  research on existing museum CCTV analytics and camera-only interaction systems.
+- [Open Source Video Analytics Frameworks](docs/research/0003-open-source-video-analytics-frameworks.md):
+  research on reusable open-source foundations for visitor analytics.
+- [Coding Standards](CODING_STANDARDS.md): engineering standards for
+  production-quality, understandable, debuggable code.
+- [Museum Gallery AI Blueprint](docs/MUSEUM_GALLERY_AI_BLUEPRINT.md): active
+  product and architecture direction.
+- [Spatial Camera Mapping](docs/architecture/spatial-camera-mapping.md):
+  systems-thinking design for mapping cameras to museum space and pathways.
+- [Option 2 Modern CV Pipeline Plan](docs/planning/0001-option-2-modern-cv-pipeline-plan.md):
+  proposed implementation plan for discussion.
+- [Architecture Decision Records](docs/adr): decisions and tradeoffs.
+- [Agent Instructions](CLAUDE.md): instructions for Codex and other coding
+  agents working in this repository.
+
+## Current Product Direction
+
+The selected direction is Option 2:
+
+```text
+Build a custom museum analytics product using modern open-source computer-vision
+components, while owning the museum-specific analytics layer.
+```
+
+The first MVP should process a recorded video or simple camera feed before
+production CCTV integration.
+
+Initial focus:
+
+- people detection and tracking
+- entry/exit counts
+- occupancy by gallery/zone
+- dwell time by exhibit zone
+- heatmaps and visitor paths
+- crowding/congestion signals
+- basic exhibit engagement and ignored exhibit rules
+- debug overlays and event logs
+
+The MVP deliberately avoids face recognition, identity tracking, demographic
+guessing, emotion detection, microphone input, and raw video storage by default.
+
+## First Build
+
+The first code slice is a modular offline Python pipeline.
+
+Install dependencies:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+```
+
+Run the processor:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m museum_gallery_ai process --config configs/demo.yaml --source path\to\video.mp4 --output runs/demo
+```
+
+Expected outputs:
+
+```text
+runs/demo/events.jsonl
+runs/demo/metrics_summary.json
+runs/demo/overlay.mp4
+```
+
+Run unit tests:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m unittest discover -s tests
+```
+
+Note: OpenCV and Ultralytics are required for actual video processing. The core
+geometry, event, metrics, and config tests run without those runtime packages.
+
+## Development Philosophy
+
+This project should help developers understand what is happening behind the
+scenes. Code should not merely work; it should be readable, observable,
+testable, and debuggable.
+
+Architecture decisions should use systems thinking: boundaries, flows, feedback
+loops, delays, incentives, failure modes, and leverage points.
+
+## Repository Status
+
+This repository currently contains planning and standards documents only. The
+application code has not been started yet.

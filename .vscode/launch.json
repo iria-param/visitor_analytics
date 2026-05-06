@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Process sample recording",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "museum_gallery_ai",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        "process",
+        "--config",
+        "configs/demo.yaml",
+        "--source",
+        "C:\\Users\\Admin\\Downloads\\Recording 2026-05-05 193149.mp4",
+        "--output",
+        "runs/vscode_sample"
+      ]
+    },
+    {
+      "name": "Run tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        "tests"
+      ]
+    }
+  ]
+}

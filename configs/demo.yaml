@@ -1,0 +1,41 @@
+{
+  "camera": {
+    "camera_id": "camera_1",
+    "gallery_id": "gallery_1",
+    "name": "Demo Camera"
+  },
+  "detector": {
+    "provider": "ultralytics",
+    "model_name": "yolo11n.pt",
+    "confidence_threshold": 0.18,
+    "image_size": 1280,
+    "tracker": "bytetrack.yaml",
+    "device": "cpu"
+  },
+  "processing": {
+    "max_frames": null,
+    "frame_stride": 1,
+    "dwell_confirm_seconds": 3.0,
+    "lost_track_grace_seconds": 5.0,
+    "congestion_threshold": 5,
+    "congestion_min_seconds": 10.0
+  },
+  "zones": [
+    {
+      "zone_id": "exhibit_a",
+      "zone_type": "exhibit",
+      "name": "Exhibit A",
+      "points": [[100, 100], [500, 100], [500, 500], [100, 500]]
+    }
+  ],
+  "lines": [
+    {
+      "line_id": "entry_line",
+      "line_type": "entry",
+      "name": "Entry Line",
+      "start": [50, 650],
+      "end": [650, 650],
+      "direction": "any"
+    }
+  ]
+}

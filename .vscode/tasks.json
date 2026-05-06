@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Process sample recording",
+      "type": "shell",
+      "command": ".\\.venv\\Scripts\\python -m museum_gallery_ai process --config configs/demo.yaml --source \"C:\\Users\\Admin\\Downloads\\Recording 2026-05-05 193149.mp4\" --output runs/vscode_sample",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run tests",
+      "type": "shell",
+      "command": ".\\.venv\\Scripts\\python -m pytest",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}
