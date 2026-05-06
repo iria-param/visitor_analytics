@@ -1,0 +1,55 @@
+# Museum Gallery AI - BoT-SORT baseline tuned for museum/gallery scenes
+#
+# This file is the museum-tuned starting point for evaluating BoT-SORT
+# alongside ByteTrack as part of Approach 2, Step 1. It is NOT a final
+# tuned configuration - the intent is to compare ID stability against
+# bytetrack_museum.yaml using the Step 2 diagnostics.
+#
+# Schema source of truth:
+#   .venv/Lib/site-packages/ultralytics/cfg/trackers/botsort.yaml
+#
+# Use it by setting `detector.tracker` in a pipeline config to:
+#   "configs/trackers/botsort_museum.yaml"
+
+tracker_type: botsort         # Required. Selects BoT-SORT backend.
+
+# --- Detection-confidence gates --------------------------------------------
+# Kept at Ultralytics defaults for first measurable museum baseline.
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+
+# --- New-track gate (museum delta) -----------------------------------------
+# Default 0.25 -> 0.30. Same rationale as bytetrack_museum.yaml: paired with
+# the project's permissive detector confidence (0.18), a higher new-track
+# bar reduces spurious ID spawns from low-confidence flicker.
+new_track_thresh: 0.30
+
+# --- Lost-track buffer (museum delta) --------------------------------------
+# Default 30 -> 90 (~1 s -> ~3 s at 30 fps). Same rationale as the ByteTrack
+# museum config: tolerate short occlusions by other visitors at exhibits.
+track_buffer: 90
+
+# --- Association similarity gate -------------------------------------------
+match_thresh: 0.8
+
+# --- Score fusion -----------------------------------------------------------
+fuse_score: True
+
+# --- BoT-SORT specifics ----------------------------------------------------
+# Global motion compensation. Museum cameras are typically fixed, so this is
+# largely a no-op; left at the Ultralytics default. If profiling shows GMC
+# adding measurable cost on a static camera, switch to "none".
+gmc_method: sparseOptFlow
+
+# --- ReID (DISABLED - requires explicit privacy review) --------------------
+# The project privacy policy is documented in:
+#   docs/MUSEUM_GALLERY_AI_BLUEPRINT.md  ("Privacy Boundaries")
+#   docs/approaches/approach_2_identity_stability_and_journey_tracking.md
+#     ("Privacy Boundary")
+# Both explicitly state ReID must not be enabled without privacy review.
+# Do NOT flip with_reid to True without that review and a written decision
+# (e.g. a new ADR) recording why it is acceptable for the deployment.
+proximity_thresh: 0.5
+appearance_thresh: 0.8
+with_reid: False
+model: auto

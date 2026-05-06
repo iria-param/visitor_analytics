@@ -1,0 +1,49 @@
+# Museum Gallery AI - ByteTrack baseline tuned for museum/gallery scenes
+#
+# This file is the museum-tuned starting point for the Approach 2, Step 1
+# tracking baseline. It is NOT a final tuned configuration. The intent is to
+# measure ID switches and track fragmentation against this baseline (Step 2)
+# and only then adjust further.
+#
+# Schema source of truth:
+#   .venv/Lib/site-packages/ultralytics/cfg/trackers/bytetrack.yaml
+#
+# Use it by setting `detector.tracker` in a pipeline config to:
+#   "configs/trackers/bytetrack_museum.yaml"
+# The path is resolved relative to the working directory at runtime, which
+# matches how the project is run from the repo root.
+
+tracker_type: bytetrack       # Required. Selects ByteTrack backend.
+
+# --- Detection-confidence gates --------------------------------------------
+# Kept at Ultralytics defaults for the first measurable museum baseline.
+# ByteTrack's two-stage association (high then low) is a known strength for
+# recovering tracks during brief occlusion, so we deliberately keep
+# track_low_thresh permissive on the first pass.
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+
+# --- New-track gate (museum delta) -----------------------------------------
+# Default 0.25. Raised to 0.30 because the project detector runs at
+# confidence_threshold 0.18 (permissive, see DetectorConfig). A higher bar
+# for spawning new track IDs reduces flicker where a low-confidence
+# detection briefly creates a fresh ID instead of matching an existing track.
+new_track_thresh: 0.30
+
+# --- Lost-track buffer (museum delta) --------------------------------------
+# Default 30 frames (~1 s at 30 fps). Raised to 90 (~3 s at 30 fps) because
+# museum visitors are often briefly occluded by other visitors clustered
+# around the same exhibit for 1-3 seconds at a time. This is the headline
+# Approach-2 fix. If this value also creates spurious long-distance
+# re-associations, lower it after Step 2 measurements.
+track_buffer: 90
+
+# --- Association similarity gate -------------------------------------------
+# Kept at default. Tighten only if Step 2 metrics show ID swaps between
+# nearby visitors at the same exhibit.
+match_thresh: 0.8
+
+# --- Score fusion -----------------------------------------------------------
+# Kept on. Helps stabilise associations when detector confidence wobbles,
+# which is common with low-light gallery scenes.
+fuse_score: True
