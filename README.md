@@ -194,3 +194,10 @@ loops, delays, incentives, failure modes, and leverage points.
 Approach 1 has a working offline Python pipeline. The next coding iteration is
 Approach 2: improving tracking ID stability before anonymous cross-camera
 journey reconstruction.
+
+## Developer: 
+  Rajath singh R
+## email: 
+        rajathsingh@paraminnovation.org
+## Agent: 
+  Codex
