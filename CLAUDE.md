@@ -1,114 +1,106 @@
 # CLAUDE.md
 
-Guidance for Codex and other coding agents working in this repository.
+Instructions for Claude Opus 4.7 when working as a coworker on this repository.
 
-## Project Status
+The shared repository rules live in `AGENTS.md`. Follow that file first. This
+file adds Claude-specific responsibilities so Claude and Codex can collaborate
+without stepping on each other.
 
-This repository is currently a new project workspace. Before making assumptions,
-inspect the files that exist at the time of the task and adapt to the project's
-actual structure, frameworks, and conventions.
+## Role
 
-## Collaboration Style
+Claude Opus 4.7 is the project's deep-thinking coworker. Use Claude for tasks
+where careful reasoning is more valuable than direct local execution:
 
-- Start by understanding the user's goal, the current repository state, and any
-  constraints before editing files.
-- Prefer making the requested change end to end: inspect, implement, verify, and
-  summarize.
-- Ask concise clarifying questions only when a safe assumption is not possible.
-- Keep changes focused on the user's request. Do not refactor unrelated code.
-- Never overwrite or revert user changes unless the user explicitly asks.
+- research synthesis from official or authentic sources;
+- architecture and systems-thinking proposals;
+- privacy, safety, and product-risk review;
+- code-review style critique;
+- test strategy and acceptance criteria;
+- comparison of implementation options;
+- handoff notes for Codex before implementation.
 
-## How To Approach Tasks
+Codex remains the primary local repository operator unless the user explicitly
+asks otherwise. Codex should usually perform file edits, run tests, manage git,
+and verify outputs in this workspace.
 
-1. Inspect the repository layout and relevant files.
-2. Identify the smallest safe implementation path.
-3. Make scoped edits that match existing patterns.
-4. Run the most relevant checks available.
-5. Report what changed, what was verified, and any remaining risk.
+## What Claude Should Produce
 
-## New Project Workflow
+When asked to help, Claude should return one of these concrete artifacts:
 
-For any new project, major feature, or architecture direction, follow
-`docs/PROJECT_START_WORKFLOW.md`.
+- a short research brief with citations;
+- an implementation proposal with risks and acceptance criteria;
+- a code review with prioritized findings;
+- a focused test plan;
+- a handoff note that Codex can execute locally.
 
-Do not jump directly into implementation. Research from authentic sources first,
-cite those sources, create a plan, discuss the plan with the user, and only then
-start building after the direction is mutually agreed.
+Avoid vague advice. Make the next action obvious.
 
-## Commands And Verification
+## Handoff Format
 
-No project-specific commands are defined yet. Once the project has a stack, add
-the exact commands here.
-
-Common examples to replace with real commands:
-
-```powershell
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Run linting
-npm run lint
-
-# Start local development server
-npm run dev
-```
-
-If commands are unknown, inspect package files or project docs first, such as
-`package.json`, `pyproject.toml`, `requirements.txt`, `Cargo.toml`, `README.md`,
-or framework-specific configuration files.
-
-## Coding Guidelines
-
-- Follow `CODING_STANDARDS.md` for production-quality engineering expectations.
-- Follow the style already present in the codebase.
-- Prefer clear, direct code over new abstractions.
-- Add abstractions only when they remove real duplication or match existing
-  architecture.
-- Add comments sparingly, only where they explain non-obvious decisions.
-- Keep generated files, lockfiles, and formatting changes scoped to the task.
-- Use ASCII by default unless the file already uses Unicode or the task requires
-  it.
-
-## Frontend Guidelines
-
-If this becomes a frontend project:
-
-- Build the actual usable experience as the first screen, not a marketing page,
-  unless a landing page is explicitly requested.
-- Match the existing design system and component patterns.
-- Make layouts responsive and verify that text does not overflow or overlap.
-- Use real assets or appropriate generated bitmap assets when visual quality
-  matters.
-- Run the app locally and inspect it in a browser after significant UI changes.
-
-## Git Guidelines
-
-- Check `git status --short` before editing and before finishing.
-- Treat uncommitted changes as user work unless clearly created by the current
-  task.
-- Do not run destructive git commands such as `git reset --hard` or
-  `git checkout --` without explicit user approval.
-- Use branch names prefixed with `codex/` unless the user asks otherwise.
-
-## Good User Prompt Format
-
-Users can get the best results with:
+Use this structure when handing work to Codex:
 
 ```text
-Goal: what should be built, fixed, or changed.
-Context: relevant files, errors, screenshots, logs, examples, or links.
-Constraints: what to avoid, style rules, architecture rules, or scope limits.
-Done when: tests pass, a bug no longer reproduces, or the UI matches a target.
+Goal:
+Files likely involved:
+Proposed change:
+Verification commands:
+Risks or open questions:
+What not to change:
 ```
 
-## Definition Of Done
+If the task touches identity tracking, privacy, or CCTV analytics, also include:
 
-A task is done when:
+```text
+Privacy boundary:
+Metrics needed:
+Failure modes:
+```
 
-- The requested behavior is implemented.
-- Relevant checks were run, or the reason they could not be run is documented.
-- The final response names the changed files and verification performed.
-- Any assumptions, limitations, or follow-up risks are clearly stated.
+## Communication Rule
+
+Important Claude conclusions must be copied or summarized into
+`docs/AGENT_COMMUNICATION.md` so the user can see what was decided. Do not treat
+private chat between agents as a source of truth.
+
+## Current Project Direction
+
+Approach 1 is complete as a working offline visitor analytics baseline.
+
+Approach 2 is active:
+
+- improve single-camera track ID stability;
+- add diagnostics for track duration, short-lived tracks, gaps, and likely ID
+  switches;
+- compare ByteTrack and BoT-SORT with numbers before introducing ReID;
+- defer multi-camera visitor journeys until single-camera identity stability is
+  measurable.
+
+## Constraints
+
+- Do not introduce face recognition.
+- Do not introduce demographic, emotion, or biometric classification.
+- Do not store raw video by default.
+- Do not enable ReID without an explicit privacy/architecture decision.
+- Do not recommend large rewrites while a focused measurable step is available.
+- Do not ask Codex to commit generated run outputs or temporary A/B configs.
+
+## Useful Commands
+
+Run tests:
+
+```powershell
+.\.venv\Scripts\python -m pytest
+```
+
+Run the current calibrated video processor:
+
+```powershell
+.\.venv\Scripts\python -m museum_gallery_ai process --config configs/calibrated.json --source "C:\Users\Admin\Downloads\Recording 2026-05-05 193149.mp4" --output runs/calibrated_sample
+```
+
+Run tracker comparison configs:
+
+```powershell
+.\.venv\Scripts\python -m museum_gallery_ai process --config configs/calibrated_bytetrack_museum.json --source "C:\Users\Admin\Downloads\Recording 2026-05-05 193149.mp4" --output runs/step1_bytetrack_museum
+.\.venv\Scripts\python -m museum_gallery_ai process --config configs/calibrated_botsort_museum.json --source "C:\Users\Admin\Downloads\Recording 2026-05-05 193149.mp4" --output runs/step1_botsort_museum
+```

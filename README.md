@@ -36,8 +36,12 @@ Research first. Plan next. Discuss together. Build after agreement.
 - [Approach 2: Identity Stability And Journey Tracking](docs/approaches/approach_2_identity_stability_and_journey_tracking.md):
   next planned direction for better track IDs and anonymous visitor journeys.
 - [Architecture Decision Records](docs/adr): decisions and tradeoffs.
-- [Agent Instructions](CLAUDE.md): instructions for Codex and other coding
-  agents working in this repository.
+- [Agent Instructions](AGENTS.md): shared instructions for Codex, Claude, and
+  other coding agents working in this repository.
+- [Claude Coworker Instructions](CLAUDE.md): Claude Opus 4.7 role and handoff
+  expectations.
+- [Agent Communication Log](docs/AGENT_COMMUNICATION.md): visible handoffs,
+  decisions, and cross-agent notes.
 
 ## Current Product Direction
 
