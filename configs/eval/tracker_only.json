@@ -1,0 +1,30 @@
+{
+  "camera": {
+    "camera_id": "gallery_camera_1",
+    "gallery_id": "experience_center_gallery",
+    "name": "Tracker-only evaluation camera"
+  },
+  "detector": {
+    "provider": "ultralytics",
+    "model_name": "yolo11n.pt",
+    "confidence_threshold": 0.18,
+    "image_size": 1280,
+    "tracker": "bytetrack.yaml",
+    "device": "cpu"
+  },
+  "processing": {
+    "max_frames": null,
+    "frame_stride": 1,
+    "write_overlay": false,
+    "dwell_confirm_seconds": 3.0,
+    "lost_track_grace_seconds": 5.0,
+    "congestion_threshold": 5,
+    "congestion_min_seconds": 10.0,
+    "short_lived_track_seconds": 1.0,
+    "id_switch_window_seconds": 2.0,
+    "id_switch_distance_pixels": 80.0,
+    "line_fragmentation_buffer_pixels": 30.0
+  },
+  "zones": [],
+  "lines": []
+}

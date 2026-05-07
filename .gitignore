@@ -7,6 +7,13 @@ __pycache__/
 venv/
 env/
 runs/
+videos/
+*.mp4
+*.avi
+*.mov
+*.mkv
+runs/colab_*/
+runs/comparison_*/
 *.pt
 *.db
 *.sqlite
