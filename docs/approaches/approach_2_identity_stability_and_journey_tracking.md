@@ -1,6 +1,7 @@
 # Approach 2: Identity Stability And Anonymous Journey Tracking
 
-Status: next planned approach.
+Status: active. Step 1 and Step 2 are implemented on
+`codex/approach-2-id-stability`.
 
 Approach 2 starts after the current baseline. Its first priority is improving
 tracking ID stability within one camera. Cross-camera journey analytics comes
@@ -101,6 +102,9 @@ Expected result:
 - more stable dwell and occupancy numbers
 - better track path continuity
 
+Status: implemented. The first visual comparison did not show a large visible
+improvement, so Step 2 was added to measure tracker quality numerically.
+
 ### Step 2: Add Track Diagnostics
 
 Add reports that explain tracking quality:
@@ -113,6 +117,30 @@ Add reports that explain tracking quality:
 - path continuity evidence
 
 This should be visible in metrics output, not hidden in video only.
+
+Status: implemented. `metrics_summary.json` now includes an additive
+`track_diagnostics` block with:
+
+- unique, real, and fallback track counts
+- duration statistics
+- short-lived track counts
+- tracks per minute
+- gap statistics
+- likely ID-switch count
+- fragmentation hotspots near zones and lines
+
+First comparison on `Recording 2026-05-05 193149.mp4`:
+
+| Run | Unique tracks | Median duration | Short-lived tracks | Likely switches |
+| --- | ---: | ---: | ---: | ---: |
+| Baseline calibrated tracker | 118 | 1.617s | 49 | 195 |
+| Museum ByteTrack | 108 | 2.000s | 44 | 169 |
+| Museum BoT-SORT | 101 | 2.100s | 35 | 125 |
+
+Interpretation: BoT-SORT currently looks best on fragmentation indicators for
+this sample because it creates fewer track IDs, fewer short-lived tracks, and
+fewer likely ID switches. However, it also shows longer track gaps, so it should
+be validated on more recordings before becoming the default.
 
 ### Step 3: Add Tracklet Summaries
 

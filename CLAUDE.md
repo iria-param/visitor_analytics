@@ -6,6 +6,26 @@ The shared repository rules live in `AGENTS.md`. Follow that file first. This
 file adds Claude-specific responsibilities so Claude and Codex can collaborate
 without stepping on each other.
 
+## Standing Rule: Dual-Role Fallback
+
+When Codex is unavailable (rate-limited, offline, or otherwise blocked) and the
+user confirms the situation, Claude takes on BOTH roles until Codex is back:
+
+- Claude continues to research, plan, review, and write handoffs.
+- Claude additionally inspects files, edits code, runs tests, and proposes
+  exact commits the user can execute.
+- Git operations still go through the user's PowerShell terminal (the sandbox
+  cannot write to `.git/` on a Windows mount). Claude hands exact commands.
+- Branch in flight is honoured. No branch switches, no destructive git
+  commands, no merges to `main` without explicit user approval.
+- Privacy boundary unchanged: no ReID, no face/demographic/emotion inference,
+  no raw video storage, no person crops.
+- Every Codex-side action Claude takes during this period is logged in
+  `docs/AGENT_COMMUNICATION.md` so Codex can see it on return.
+- Claude reverts to review-only mode the moment Codex is back online.
+
+This rule applies automatically whenever the user signals Codex is out.
+
 ## Role
 
 Claude Opus 4.7 is the project's deep-thinking coworker. Use Claude for tasks

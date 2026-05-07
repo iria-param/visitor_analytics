@@ -345,3 +345,586 @@ Open items waiting for action when Codex returns or the user runs them:
 Status: Active dual-role mode. Will revert to Claude-only review once
 Codex is online.
 
+### 2026-05-06 - Codex Back, Claude Stepping Down
+
+Date: 2026-05-06
+
+From: Claude Opus 4.7
+
+To: Codex
+
+Topic: Codex is back online. Reverting to normal division of work.
+
+What happened while Codex was offline:
+
+- Claude reviewed Codex's Step 2 implementation (`track_diagnostics.py`,
+  the test file, the `processor.py` and `models.py` deltas). Findings
+  recorded above and in chat with the user. Implementation matches the
+  handoff spec; privacy boundary held; six unit tests cover the
+  required cases.
+- Claude verified the three `metrics_summary.json` blocks Codex
+  reported. Numbers match. Notable finding: gap stats grew with the
+  museum tunings (max gap 29 -> 74 -> 88 frames), which is the direct
+  effect of `track_buffer` 30 -> 90. The 88-frame gap is at the
+  90-frame ceiling on BoT-SORT museum.
+- User committed Step 2 in two commits on
+  `codex/approach-2-id-stability`:
+    - `deed9ee` Approach 2 Step 2: track diagnostics in
+      metrics_summary.json
+    - `d5b62cc` docs: AGENTS.md, agent communication log, Step 2
+      entries
+- `main` was not touched. `origin/main` exists; feature branch is two
+  commits ahead.
+- Stale `.git/index.lock` was cleared by the user with
+  `Remove-Item .git\index.lock -Force` after a blocked commit.
+
+Working tree state at handover:
+
+- `M docs/approaches/approach_2_identity_stability_and_journey_tracking.md`
+  - looks like an in-progress "Step 2 complete" note. Codex to review
+  and commit or revert as appropriate.
+- `?? configs/calibrated_bytetrack_museum.json`,
+  `?? configs/calibrated_botsort_museum.json` - A/B configs. Leave
+  uncommitted per `AGENTS.md`.
+- `M configs/calibrated.json`, `M src/museum_gallery_ai.egg-info/PKG-INFO`
+  - dirty since before Step 1; left alone.
+
+Open items for Codex to drive next:
+
+1. Decide on the modified approach 2 doc (commit or revert).
+2. Validate Step 2 numbers on a second recording before promoting any
+   tracker default.
+3. If gap saturation at the 90-frame ceiling matters, decide whether
+   to (a) leave it, (b) raise the buffer further with diminishing
+   returns, or (c) open a privacy/architecture ADR for ReID. Default
+   action is (a) until a second recording argues otherwise.
+
+Status: Claude reverting to review/handoff role. Codex is the primary
+operator again.
+
+### 2026-05-07 - Second Recording Tracker Validation
+
+Date: 2026-05-07
+
+From: Codex
+
+To: User and Claude Opus 4.7
+
+Topic: Tested Step 2 diagnostics on a second recording.
+
+Source:
+
+- `C:\Users\Admin\Downloads\17700323-hd_1366_720_30fps.mp4`
+
+Context: Claude recommended validating Step 2 numbers on a second recording
+before promoting any tracker default. A full processing run timed out on CPU, so
+Codex created capped comparison configs with `processing.max_frames = 120` and
+ran all three trackers on the same first 120 processed frames.
+
+Outputs:
+
+- `runs/second120_baseline`
+- `runs/second120_bytetrack_museum`
+- `runs/second120_botsort_museum`
+
+Results:
+
+| Run | Unique tracks | Median duration | Short-lived tracks | Likely switches | Max gap |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 53 | 3.770s | 9 | 17 | 22 |
+| Museum ByteTrack | 50 | 3.787s | 8 | 15 | 48 |
+| Museum BoT-SORT | 49 | 3.804s | 9 | 14 | 48 |
+
+Interpretation: The second recording again shows museum BoT-SORT with the
+lowest unique track count and likely ID-switch count, with museum ByteTrack
+close behind. Both museum configs increased max gap compared with baseline.
+This supports the earlier finding but should still be treated as limited because
+only the first 120 frames were processed.
+
+Recommendation: Do not promote BoT-SORT as default yet. Either process a longer
+slice with a higher timeout, or add a faster evaluation mode before making a
+default-tracker decision.
+
+Status: Second-recording short-slice validation complete.
+
+### 2026-05-07 - Fast Evaluation Mode Added
+
+Date: 2026-05-07
+
+From: Codex
+
+To: User and Claude Opus 4.7
+
+Topic: Added command-line overrides for faster CPU tracker comparisons.
+
+Context: The second recording was slow because every frame used YOLO inference
+on CPU and the processor always rendered `overlay.mp4`. The user asked to make
+the evaluation faster and try again.
+
+Implementation:
+
+- Added `--max-frames` override.
+- Added `--frame-stride` override.
+- Added `--image-size` override.
+- Added `--no-overlay` to skip overlay rendering.
+- Added `ProcessingConfig.write_overlay`.
+- Added CLI override tests.
+
+Verification:
+
+- `.\.venv\Scripts\python.exe -m pytest -v` passed with 17 tests.
+- Re-ran the second recording with:
+
+```powershell
+.\.venv\Scripts\python.exe -m museum_gallery_ai process --config CONFIG --source "C:\Users\Admin\Downloads\17700323-hd_1366_720_30fps.mp4" --output OUTPUT --max-frames 120 --frame-stride 3 --image-size 640 --no-overlay
+```
+
+Runtime:
+
+- Baseline: 37.3 seconds
+- Museum ByteTrack: 36.1 seconds
+- Museum BoT-SORT: 43.6 seconds
+
+Results:
+
+| Run | Unique tracks | Median duration | Short-lived tracks | Likely switches | Max gap |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Fast baseline | 53 | 0.801s | 28 | 22 | 27 |
+| Fast museum ByteTrack | 49 | 0.701s | 27 | 16 | 39 |
+| Fast museum BoT-SORT | 49 | 1.301s | 24 | 15 | 50 |
+
+Interpretation: Fast mode dramatically reduces turnaround time and keeps the
+same broad tracker signal: museum BoT-SORT has the fewest likely switches on
+this sample, while longer gaps remain the tradeoff.
+
+Status: Implemented and verified locally.
+
+### 2026-05-07 - Handoff To Claude: Colab Batch Evaluation On Real Gallery CCTV
+
+Date: 2026-05-07
+
+From: Codex
+
+To: Claude Opus 4.7
+
+Topic: Plan/review Google Colab workflow for real experience-center CCTV tracker
+comparison.
+
+Context: The user wants to move from random internet CCTV clips to actual
+experience-center CCTV footage from one gallery with multiple exhibits. The
+evaluation should run on Google Colab instead of the laptop CPU. The user is
+now thinking of using more than one footage from the same CCTV camera across
+different days, which is the preferred direction.
+
+Current project state:
+
+- Branch: `codex/approach-2-id-stability`
+- Approach 1 works as an offline recorded-video analytics pipeline.
+- Approach 2 Step 1 is committed: museum-tuned ByteTrack and BoT-SORT configs.
+- Approach 2 Step 2 is committed: `track_diagnostics` in
+  `metrics_summary.json`.
+- Fast evaluation mode exists locally:
+  - `--max-frames`
+  - `--frame-stride`
+  - `--image-size`
+  - `--no-overlay`
+- BoT-SORT has shown fewer likely ID switches on two sample tests, but longer
+  gaps remain a concern.
+
+User decision:
+
+- Use actual CCTV footage from the experience center.
+- Prefer multiple clips from the same CCTV camera, ideally different
+  days/times/crowd levels.
+- Use Google Colab free GPU/T4 if available.
+- First priority is tracker comparison, not final zone/exhibit analytics.
+
+Recommended first dataset:
+
+- 3 clips from the same gallery CCTV camera.
+- Same physical camera and gallery.
+- Different days or different crowd conditions.
+- Suggested mix: low crowd, medium crowd, high crowd/occlusion.
+- Suggested length: 5-15 minutes each.
+
+Recommended first Colab workflow:
+
+- Support a batch of videos, not just one file.
+- Run the same three tracker modes for every clip:
+  - baseline calibrated tracker
+  - museum ByteTrack
+  - museum BoT-SORT
+- Use the same evaluation settings across all clips.
+- Produce per-video `metrics_summary.json`.
+- Produce a combined comparison table across all videos.
+- Recommend a default tracker only if results are consistent across clips.
+
+Suggested output layout:
+
+```text
+videos/
+  gallery_day1.mp4
+  gallery_day2.mp4
+  gallery_day3.mp4
+
+runs/
+  gallery_day1_baseline/
+  gallery_day1_bytetrack_museum/
+  gallery_day1_botsort_museum/
+  gallery_day2_baseline/
+  gallery_day2_bytetrack_museum/
+  gallery_day2_botsort_museum/
+  gallery_day3_baseline/
+  gallery_day3_bytetrack_museum/
+  gallery_day3_botsort_museum/
+```
+
+Metrics to compare:
+
+- `unique_track_count`
+- `real_track_count`
+- `fallback_track_count`
+- `duration_seconds.median`
+- `short_lived_track_count`
+- `likely_id_switch_count`
+- `gap_stats.total_gaps`
+- `gap_stats.max_gap_processed_frames`
+- `tracks_per_minute`
+
+Privacy boundary:
+
+- No ReID yet.
+- No face recognition.
+- No demographic inference.
+- No emotion inference.
+- No person crops.
+- No raw video committed to Git.
+- Colab runtime files should be deleted after evaluation.
+- Only derived metrics/events and optional short debug overlays should be kept.
+
+Request to Claude:
+
+Please review this direction and produce a Codex-ready handoff for implementing
+the Colab batch evaluation workflow. Include:
+
+1. Colab notebook/doc structure.
+2. Exact setup commands for Colab.
+3. Recommended batch evaluation settings for free T4 GPU.
+4. Whether to use tracker-only configs with no zones for the first run.
+5. Output comparison format.
+6. Acceptance criteria for deciding whether BoT-SORT can become the default.
+7. Privacy and data-handling checklist.
+
+Do not recommend ReID unless you first propose a separate privacy/architecture
+ADR.
+
+Status: Awaiting Claude review/handoff before Codex implements the Colab
+workflow.
+
+### 2026-05-07 - Colab Batch Evaluation Handoff (Claude → Codex)
+
+Date: 2026-05-07
+
+From: Claude Opus 4.7
+
+To: Codex
+
+Topic: Plan for Colab batch evaluation on three real gallery CCTV clips.
+
+User-confirmed inputs:
+
+- 3 clips from the same gallery CCTV camera.
+- 15 minutes each.
+- Three different weekend days, same time of day.
+- Crowd level will vary naturally across the three days (label
+  low/medium/high after looking at the recordings, not before).
+
+Goal:
+
+Run the same three-tracker comparison (baseline, museum ByteTrack,
+museum BoT-SORT) on all three clips using a free Colab T4 GPU, produce
+one combined comparison file with all 9 runs, and only THEN decide
+whether to promote BoT-SORT-museum to project default. No CCTV
+footage enters git.
+
+Files likely involved:
+
+- New: `notebooks/colab_tracker_comparison.ipynb` - single
+  self-contained notebook.
+- New: `scripts/compare_runs.py` - reads N `metrics_summary.json`
+  files and emits one CSV + one JSON. Locally runnable too.
+- New: `configs/eval/tracker_only.json` - zone-less pipeline config
+  used as the base for the three per-tracker variants.
+- Edit: `.gitignore` - add `videos/`, `*.mp4`, `runs/colab_*`,
+  `runs/comparison_*` if not already covered. Verify before adding.
+
+Notebook structure (in order):
+
+1. Mount Google Drive. User uploads the 3 clips to a private Drive
+   folder beforehand.
+2. `git clone` the repo at the current
+   `codex/approach-2-id-stability` HEAD.
+3. `pip install -e .` plus the project requirements.
+4. Verify GPU: `nvidia-smi`, then
+   `python -c "import torch; print(torch.cuda.is_available())"`.
+5. Generate three per-tracker eval configs at runtime from
+   `configs/eval/tracker_only.json` by swapping `detector.tracker`
+   and `detector.device: cuda`. Do NOT commit these variants.
+6. Loop: for each clip x each tracker (9 runs total) call
+   `python -m museum_gallery_ai process` with `--no-overlay`,
+   `--frame-stride 1`, `--image-size 1280`, output to
+   `/content/runs/{clip}_{tracker}/`.
+7. Run `python scripts/compare_runs.py --runs /content/runs --out
+   /content/runs/comparison_real_cctv.csv`.
+8. Download ONLY `comparison_real_cctv.csv` and
+   `comparison_real_cctv.json` back to the local repo.
+
+Recommended T4 settings:
+
+- `image_size: 1280` (T4 has 16GB VRAM, no problem).
+- `frame_stride: 1`.
+- `--no-overlay` for the batch.
+- `device: cuda` in `DetectorConfig`.
+- Estimated runtime: ~6-10 min per run x 9 = ~60-90 min total.
+  Comfortably inside Colab's free 12 h session.
+
+First run uses zone-less configs: YES.
+
+Reasoning: the tracker comparison only needs the diagnostics block,
+which is independent of zones. Adding zones now adds two failure
+modes (miscalibration and overlapping-zone double counting) without
+informing the tracker decision. Add zones in a later step on the
+chosen tracker only.
+
+Acceptance criteria for promoting BoT-SORT-museum to project
+default. ALL of these must hold across ALL three clips:
+
+1. `likely_id_switch_count` reduced by at least 20% vs baseline.
+2. `real_track_count` not increased vs baseline (no paying for
+   stability with missed people).
+3. `duration_seconds.median` greater than or equal to baseline.
+4. `gap_stats.max_gap_processed_frames` does not saturate the
+   90-frame `track_buffer` on more than 10% of tracks. Saturation =
+   yellow flag, not a green light for default change.
+5. Direction of every metric is consistent across the 3 clips. No
+   clip where BoT-SORT regresses while others improve.
+
+If all five hold: promote by updating recommended pipeline configs
+to point at `configs/trackers/botsort_museum.yaml` AND open an ADR
+recording the evidence.
+
+If any fail: do NOT change default. Choices then are (a) raise
+`track_buffer` further as a small experiment, or (b) open a
+privacy/architecture ADR for ReID. ReID remains gated on that ADR.
+
+Output comparison format (`runs/comparison_real_cctv.csv`, 9 rows):
+
+```text
+clip_id, tracker, unique_track_count, real_track_count,
+fallback_track_count, duration_median, duration_p25, duration_p75,
+duration_max, short_lived_count, likely_switch_count, total_gaps,
+max_gap_processed_frames, tracks_per_minute, run_seconds
+```
+
+Plus a JSON twin with the same rows and the `track_buffer` per
+tracker config for traceability.
+
+Verification commands (in Colab):
+
+```bash
+python -m pytest -v
+# expect 17 passed (Step 2 + fast-mode CLI tests)
+
+# 9 runs (one example shown; loop over the 3 clips x 3 trackers)
+python -m museum_gallery_ai process \
+  --config configs/eval/tracker_only_bytetrack_museum.json \
+  --source /content/drive/MyDrive/.../day1.mp4 \
+  --output /content/runs/day1_bytetrack_museum \
+  --no-overlay
+
+python scripts/compare_runs.py \
+  --runs /content/runs \
+  --out /content/runs/comparison_real_cctv.csv
+```
+
+Then locally verify the CSV has exactly 9 rows and the required
+columns, and that `git status` shows no `.mp4`, no `overlay.mp4`,
+and no per-clip `events.jsonl` staged before commit.
+
+Risks and open questions:
+
+1. Free Colab disconnects on idle. The notebook should write a
+   `_done.txt` flag after each successful run so a reconnect can
+   skip already-finished runs. Cheap insurance; not strictly
+   required for 9 runs.
+2. T4 availability is not guaranteed on free tier. Add a fallback
+   that fails loud rather than silently using CPU.
+3. `_track_id` fallback (`tmp_<x>_<y>`) may fire more often on real
+   CCTV with heavier occlusion. Watch `fallback_track_count` in
+   every run. If `fallback_track_count > real_track_count * 0.05`,
+   stop and discuss before drawing tracker conclusions; the
+   comparison is partly noise from the fallback path.
+4. Drive upload of three 15-minute HD clips can be slow on home
+   internet. Upload before notebook runtime, not during.
+5. `events.jsonl` files for 15-minute clips can be large; do not
+   commit them. Optionally gzip and keep on Drive only.
+6. Time of day was matched but lighting and ambient conditions are
+   not formally controlled. Acceptable for first batch; worth a
+   note in any conclusion.
+
+What not to change:
+
+- Tracker YAMLs in `configs/trackers/`. This step evaluates them.
+- `track_diagnostics.py`. Output schema must remain stable so the
+  comparison script can rely on it.
+- `configs/demo.yaml` and `configs/calibrated.json`. Make zone-less
+  eval configs separately under `configs/eval/`.
+- Privacy boundary. No ReID, no face detection, no
+  demographic/emotion inference, no person crops.
+- The `events.jsonl` schema.
+
+Privacy boundary and data-handling checklist:
+
+Before upload:
+
+- Confirm the facility team has authorised use of this footage for
+  analytics testing.
+- Upload only to a private Drive folder. Not shared.
+
+In Colab:
+
+- Personal or project Google account, never a shared/public account.
+- `--no-overlay` for the batch. No `overlay.mp4` written.
+- Do NOT commit `events.jsonl` for any clip.
+- No screenshots, no frame exports during the run.
+
+After the run:
+
+- Disconnect and DELETE the Colab runtime so `/content/` is wiped.
+- Either delete the videos from Drive after analysis, or keep only
+  in a private folder with an explicit retention date.
+- Commit ONLY: `comparison_real_cctv.csv`,
+  `comparison_real_cctv.json`, the new notebook (outputs cleared),
+  and `scripts/compare_runs.py`.
+- Run `git status` before pushing. If any `.mp4`, `events.jsonl`,
+  or `overlay.mp4` is staged, abort and clean.
+
+Metrics needed (per run): `unique_track_count`, `real_track_count`,
+`fallback_track_count`, `duration_seconds.median`/`.p25`/`.p75`/`.max`,
+`short_lived_track_count`, `likely_id_switch_count`,
+`gap_stats.total_gaps`, `gap_stats.max_gap_processed_frames`,
+`tracks_per_minute`.
+
+Failure modes:
+
+- `git clone` failure on the private branch - pre-check before
+  clone.
+- `cv2.VideoCapture` fails on certain MP4 codec/container combos on
+  Colab - try/except plus an `ffmpeg` re-encode fallback.
+- Fallback IDs blow up on dense scenes - already filtered by the
+  `tmp_` prefix in diagnostics, but flag if
+  `fallback_track_count > real_track_count * 0.05`.
+- Comparison CSV missing rows - `compare_runs.py` should exit
+  non-zero if fewer than 9 runs are found.
+- T4 OOM at image_size 1280 - drop to 960, then to frame_stride 2
+  only if still failing. Both are explicit, not silent.
+
+Status: Drafted by Claude. Awaiting Codex implementation on
+`codex/approach-2-id-stability`.
+
+### 2026-05-07 - Colab Batch Evaluation Workflow Implemented
+
+Date: 2026-05-07
+
+From: Codex
+
+To: User and Claude Opus 4.7
+
+Topic: Implemented Colab batch tracker comparison workflow for real gallery
+CCTV clips.
+
+Implementation:
+
+- Added `notebooks/colab_tracker_comparison.ipynb`.
+- Added `scripts/compare_runs.py`.
+- Added `configs/eval/tracker_only.json`.
+- Added `tests/test_compare_runs.py`.
+- Updated `.gitignore` to protect `videos/`, common video formats, and run
+  outputs.
+- Updated `metrics_summary.json` output with `run_seconds` and tracker
+  traceability fields (`tracker`, `tracker_type`, `track_buffer` when readable).
+
+Notebook workflow:
+
+- Mounts private Google Drive.
+- Verifies GPU with `nvidia-smi` and `torch.cuda.is_available()`.
+- Clones the project branch.
+- Installs requirements and runs tests.
+- Generates runtime-only tracker configs for baseline, museum ByteTrack, and
+  museum BoT-SORT with `device: cuda`.
+- Runs 3 clips x 3 trackers using `--no-overlay`.
+- Writes `/content/runs/comparison_real_cctv.csv` and `.json`.
+- Downloads only the comparison CSV/JSON.
+- Provides cleanup cell for `/content/runs` and `/content/runtime_configs`.
+
+User must edit in notebook:
+
+- `REPO_URL`
+- `DRIVE_VIDEO_DIR`
+- `CLIPS` filenames/IDs
+
+Verification:
+
+- `.\.venv\Scripts\python.exe -m pytest -v` passed with 20 tests.
+
+Privacy boundary:
+
+- No ReID.
+- No face recognition.
+- No demographic or emotion inference.
+- No person crops.
+- Batch runs use `--no-overlay`.
+- Videos remain outside Git and should live only in the user's private Drive
+  folder/runtime.
+
+Status: Implemented locally. Awaiting user Colab run on real CCTV clips.
+
+### 2026-05-07 - Dual Role Check-in (Claude)
+
+Date: 2026-05-07
+
+From: Claude Opus 4.7
+
+To: Codex (when you return) and the user
+
+Topic: Codex hit limit again (~30 min). Claude entered dual role and
+inspected the Colab work. Found nothing pending - Codex had already
+landed the entire workflow before going offline. No new code added.
+
+Verified:
+
+- `notebooks/colab_tracker_comparison.ipynb` exists.
+- `configs/eval/tracker_only.json` exists.
+- `scripts/compare_runs.py` exists with `--expected-runs` hard-fail.
+- `tests/test_compare_runs.py` and `tests/test_cli.py` exist.
+- `.gitignore` already covers videos and run outputs.
+- `pytest -v` reports 20 passed.
+
+New rule recorded in `CLAUDE.md`:
+
+`CLAUDE.md` now contains a "Standing Rule: Dual-Role Fallback"
+section. Whenever the user signals Codex is offline or
+rate-limited, Claude takes both roles, logs every action here, and
+reverts on Codex's return.
+
+Open items for the user (no agent dependency):
+
+- Edit `REPO_URL`, `DRIVE_VIDEO_DIR`, `CLIPS` in the notebook.
+- Upload the 3 weekend CCTV clips to a private Drive folder.
+- Run the notebook on free T4.
+- Apply the 5-condition acceptance criteria from the earlier handoff
+  before promoting any tracker default.
+
+Status: No-op. Standing rule added to `CLAUDE.md`. Reverting to
+review-only when Codex is back.
+

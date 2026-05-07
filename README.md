@@ -96,6 +96,23 @@ runs/demo/metrics_summary.json
 runs/demo/overlay.mp4
 ```
 
+For quick tracker comparisons on CPU, skip overlay rendering and reduce the
+processing load:
+
+```powershell
+.\.venv\Scripts\python -m museum_gallery_ai process --config configs/calibrated.json --source path\to\video.mp4 --output runs/fast_eval --max-frames 120 --frame-stride 3 --image-size 640 --no-overlay
+```
+
+Fast-evaluation flags:
+
+- `--max-frames`: stop after a fixed number of processed frames
+- `--frame-stride`: process every Nth raw frame
+- `--image-size`: lower YOLO inference size for faster CPU runs
+- `--no-overlay`: write metrics/events only, no `overlay.mp4`
+
+Use full-quality overlay runs when visually checking tracking. Use fast
+evaluation runs when comparing tracker diagnostics numerically.
+
 Run unit tests:
 
 ```powershell
