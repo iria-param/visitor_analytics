@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ class OfflineProcessor:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def run(self) -> dict[str, Any]:
+        started_at = time.perf_counter()
         video: VideoSource | None = None
         events_writer: JsonlEventWriter | None = None
         overlay_writer: OverlayVideoWriter | None = None
@@ -53,13 +55,14 @@ class OfflineProcessor:
                 events = event_engine.process(frame.timestamp_seconds, tracks)
                 self._record_events(events, metrics, events_writer)
 
-                current_summary = metrics.summary()
-                overlay = renderer.render(frame.image, tracks, current_summary)
-                if overlay_writer is None:
-                    height, width = overlay.shape[:2]
-                    fps = max(1.0, video.fps / max(1, self.config.processing.frame_stride))
-                    overlay_writer = OverlayVideoWriter(self.output_dir / "overlay.mp4", fps, (width, height))
-                overlay_writer.write(overlay)
+                if self.config.processing.write_overlay:
+                    current_summary = metrics.summary()
+                    overlay = renderer.render(frame.image, tracks, current_summary)
+                    if overlay_writer is None:
+                        height, width = overlay.shape[:2]
+                        fps = max(1.0, video.fps / max(1, self.config.processing.frame_stride))
+                        overlay_writer = OverlayVideoWriter(self.output_dir / "overlay.mp4", fps, (width, height))
+                    overlay_writer.write(overlay)
 
                 processed_frames += 1
                 last_timestamp = frame.timestamp_seconds
@@ -83,6 +86,8 @@ class OfflineProcessor:
             "gallery_id": self.config.camera.gallery_id,
             "name": self.config.camera.name,
         }
+        summary["run_seconds"] = round(time.perf_counter() - started_at, 3)
+        summary["tracker"] = _tracker_summary(self.config.detector.tracker)
         if diagnostics is not None:
             summary["track_diagnostics"] = diagnostics.summary(self.config.zones, self.config.lines)
         write_json(self.output_dir / "metrics_summary.json", summary)
@@ -93,3 +98,22 @@ class OfflineProcessor:
         for event in events:
             metrics.apply(event)
             writer.write(event)
+
+
+def _tracker_summary(tracker: str) -> dict[str, Any]:
+    summary: dict[str, Any] = {"tracker": tracker}
+    tracker_path = Path(tracker)
+    if not tracker_path.exists():
+        return summary
+    try:
+        import yaml
+    except ImportError:
+        return summary
+    try:
+        loaded = yaml.safe_load(tracker_path.read_text(encoding="utf-8")) or {}
+    except OSError:
+        return summary
+    if isinstance(loaded, dict):
+        summary["tracker_type"] = loaded.get("tracker_type")
+        summary["track_buffer"] = loaded.get("track_buffer")
+    return summary

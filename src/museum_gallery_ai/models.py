@@ -55,6 +55,7 @@ class DetectorConfig:
 class ProcessingConfig:
     max_frames: int | None = None
     frame_stride: int = 1
+    write_overlay: bool = True
     dwell_confirm_seconds: float = 3.0
     lost_track_grace_seconds: float = 5.0
     congestion_threshold: int = 5
