@@ -22,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     process.add_argument("--frame-stride", type=int, help="Override processing.frame_stride")
     process.add_argument("--image-size", type=int, help="Override detector.image_size")
     process.add_argument("--no-overlay", action="store_true", help="Skip overlay.mp4 rendering for faster metric runs")
+    process.add_argument("--overlay", action="store_true", help="Force overlay.mp4 rendering even if config disables it")
 
     calibrate = subparsers.add_parser("calibrate", help="Open a browser UI to click zones and lines")
     calibrate.add_argument("--source", required=True, help="Path to recorded video file")
@@ -58,6 +59,8 @@ def _apply_process_overrides(config: PipelineConfig, args: argparse.Namespace) -
     processing = config.processing
     detector = config.detector
 
+    if args.no_overlay and args.overlay:
+        raise ValueError("Use either --overlay or --no-overlay, not both")
     if args.max_frames is not None:
         processing = replace(processing, max_frames=args.max_frames)
     if args.frame_stride is not None:
@@ -66,6 +69,8 @@ def _apply_process_overrides(config: PipelineConfig, args: argparse.Namespace) -
         processing = replace(processing, frame_stride=args.frame_stride)
     if args.no_overlay:
         processing = replace(processing, write_overlay=False)
+    if args.overlay:
+        processing = replace(processing, write_overlay=True)
     if args.image_size is not None:
         if args.image_size < 1:
             raise ValueError("--image-size must be 1 or greater")

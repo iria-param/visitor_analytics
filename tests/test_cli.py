@@ -12,7 +12,7 @@ class CliOverrideTests(unittest.TestCase):
             detector=DetectorConfig(image_size=1280),
             processing=ProcessingConfig(frame_stride=1, max_frames=None, write_overlay=True),
         )
-        args = argparse.Namespace(max_frames=25, frame_stride=3, image_size=640, no_overlay=True)
+        args = argparse.Namespace(max_frames=25, frame_stride=3, image_size=640, no_overlay=True, overlay=False)
 
         overridden = _apply_process_overrides(config, args)
 
@@ -24,6 +24,29 @@ class CliOverrideTests(unittest.TestCase):
         self.assertEqual(config.processing.frame_stride, 1)
         self.assertTrue(config.processing.write_overlay)
         self.assertEqual(config.detector.image_size, 1280)
+
+    def test_overlay_override_can_force_overlay_on(self):
+        config = PipelineConfig(
+            camera=CameraConfig(camera_id="camera_1", gallery_id="gallery_1"),
+            detector=DetectorConfig(),
+            processing=ProcessingConfig(write_overlay=False),
+        )
+        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=False, overlay=True)
+
+        overridden = _apply_process_overrides(config, args)
+
+        self.assertTrue(overridden.processing.write_overlay)
+
+    def test_overlay_flags_are_mutually_exclusive(self):
+        config = PipelineConfig(
+            camera=CameraConfig(camera_id="camera_1", gallery_id="gallery_1"),
+            detector=DetectorConfig(),
+            processing=ProcessingConfig(),
+        )
+        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=True, overlay=True)
+
+        with self.assertRaises(ValueError):
+            _apply_process_overrides(config, args)
 
 
 if __name__ == "__main__":
