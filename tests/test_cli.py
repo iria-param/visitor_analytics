@@ -12,7 +12,7 @@ class CliOverrideTests(unittest.TestCase):
             detector=DetectorConfig(image_size=1280),
             processing=ProcessingConfig(frame_stride=1, max_frames=None, write_overlay=True),
         )
-        args = argparse.Namespace(max_frames=25, frame_stride=3, image_size=640, no_overlay=True, overlay=False)
+        args = argparse.Namespace(max_frames=25, frame_stride=3, image_size=640, no_overlay=True, overlay=False, detector_iou=None)
 
         overridden = _apply_process_overrides(config, args)
 
@@ -31,7 +31,7 @@ class CliOverrideTests(unittest.TestCase):
             detector=DetectorConfig(),
             processing=ProcessingConfig(write_overlay=False),
         )
-        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=False, overlay=True)
+        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=False, overlay=True, detector_iou=None)
 
         overridden = _apply_process_overrides(config, args)
 
@@ -43,7 +43,31 @@ class CliOverrideTests(unittest.TestCase):
             detector=DetectorConfig(),
             processing=ProcessingConfig(),
         )
-        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=True, overlay=True)
+        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=True, overlay=True, detector_iou=None)
+
+        with self.assertRaises(ValueError):
+            _apply_process_overrides(config, args)
+
+    def test_detector_iou_override_applies_to_detector_config(self):
+        config = PipelineConfig(
+            camera=CameraConfig(camera_id="camera_1", gallery_id="gallery_1"),
+            detector=DetectorConfig(),
+            processing=ProcessingConfig(),
+        )
+        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=False, overlay=False, detector_iou=0.5)
+
+        overridden = _apply_process_overrides(config, args)
+
+        self.assertEqual(overridden.detector.iou, 0.5)
+        self.assertEqual(config.detector.iou, 0.4)
+
+    def test_detector_iou_override_rejects_out_of_range(self):
+        config = PipelineConfig(
+            camera=CameraConfig(camera_id="camera_1", gallery_id="gallery_1"),
+            detector=DetectorConfig(),
+            processing=ProcessingConfig(),
+        )
+        args = argparse.Namespace(max_frames=None, frame_stride=None, image_size=None, no_overlay=False, overlay=False, detector_iou=1.5)
 
         with self.assertRaises(ValueError):
             _apply_process_overrides(config, args)

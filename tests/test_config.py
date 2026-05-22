@@ -13,6 +13,10 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config.zones[0].camera_id, "camera_1")
         self.assertEqual(config.lines[0].gallery_id, "gallery_1")
 
+    def test_detector_iou_defaults_to_0_4(self):
+        config = load_config(Path("configs/demo.yaml"))
+        self.assertEqual(config.detector.iou, 0.4)
+
 
 if __name__ == "__main__":
     unittest.main()

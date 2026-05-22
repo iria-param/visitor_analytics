@@ -49,6 +49,7 @@ class DetectorConfig:
     image_size: int = 1280
     tracker: str = "bytetrack.yaml"
     device: str = "cpu"
+    iou: float = 0.4
 
 
 @dataclass(frozen=True)

@@ -25,7 +25,7 @@ class UltralyticsPersonTracker:
         results = self._model.track(
             frame,
             conf=self.config.confidence_threshold,
-            iou=0.4,
+            iou=self.config.iou,
             imgsz=self.config.image_size,
             tracker=self.config.tracker,
             persist=True,

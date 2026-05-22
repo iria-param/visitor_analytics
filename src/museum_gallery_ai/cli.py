@@ -21,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     process.add_argument("--max-frames", type=int, help="Override processing.max_frames for quick evaluations")
     process.add_argument("--frame-stride", type=int, help="Override processing.frame_stride")
     process.add_argument("--image-size", type=int, help="Override detector.image_size")
+    process.add_argument("--detector-iou", type=float, help="Override detector.iou (NMS IoU threshold; default 0.4)")
     process.add_argument("--no-overlay", action="store_true", help="Skip overlay.mp4 rendering for faster metric runs")
     process.add_argument("--overlay", action="store_true", help="Force overlay.mp4 rendering even if config disables it")
 
@@ -75,5 +76,9 @@ def _apply_process_overrides(config: PipelineConfig, args: argparse.Namespace) -
         if args.image_size < 1:
             raise ValueError("--image-size must be 1 or greater")
         detector = replace(detector, image_size=args.image_size)
+    if args.detector_iou is not None:
+        if not 0.0 < args.detector_iou < 1.0:
+            raise ValueError("--detector-iou must be between 0.0 and 1.0 (exclusive)")
+        detector = replace(detector, iou=args.detector_iou)
 
     return replace(config, processing=processing, detector=detector)
